@@ -2,6 +2,7 @@
 *~
 # temporary files
 .fuse_hidden*
+*.backup
 # KDE directory preferences
 .directory
 # trash folder
