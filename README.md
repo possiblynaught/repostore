@@ -56,7 +56,7 @@ unset REPOSTORE_CSV_FILE
 
 You can also hard-code the directory/file paths within the scripts themselves, see the sections at the top of the scripts containing the text: ***UNCOMMENT TO FORCE/OVERRIDE TRAVERSAL*** to set persistent path variables to override any environmental variables.
 
-### TODO
+## TODO
 
 - [x] Add example submodule utilization script
 - [ ] Add description of CSV format to README
