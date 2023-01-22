@@ -21,6 +21,7 @@ mkdir -p "$REPO_DIR"
 # Submodule update
 git submodule init
 git submodule update
+git submodule update --remote
 
 # Check for repostore submodule
 REPOSTORE_SUBMODULE="$SCRIPT_DIR/repostore"
