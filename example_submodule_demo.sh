@@ -18,6 +18,10 @@ REPO_DIR="$HOME/Documents"
 mkdir -p "$REPO_DIR"
 [ -d "$REPO_DIR" ] || (echo "Error, directory not found: $REPO_DIR"; exit 1)
 
+# Submodule update
+git submodule init
+git submodule update
+
 # Check for repostore submodule
 REPOSTORE_SUBMODULE="$SCRIPT_DIR/repostore"
 REPOSTORE_BACKUP="$REPOSTORE_SUBMODULE/backup.sh"
@@ -35,3 +39,8 @@ ${REPOSTORE_BACKUP}
 # Unset submodule variables
 unset REPOSTORE_CSV_FILE
 unset REPOSTORE_REPO_DIR
+
+# Add changes to git
+#git add "$CSV_FILE"
+#git commit -m "Stored current repos"
+#git push
