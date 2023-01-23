@@ -10,7 +10,7 @@ The scripts are designed to be inherited as a git submodule or used independentl
 
 You can use these scripts as a submodule in another repository. For instance, you could have a private repository to store your CSVs/configurations and point these scripts to your already saved configs. To add this project as a submodule, run this from within another repository:
 
-```console
+```bash
 git submodule add https://github.com/possiblynaught/repostore.git
 ```
 
@@ -20,33 +20,33 @@ Take a look at the *example\_submodule\_demo.sh* script for an example of integr
 
 The scripts can be used as standalone scripts by exporting environment variables to tell them where to look and store/load data from. Here are the values to export that are used by both the *backup.sh* and *restore.sh* scripts:
 
-```console
+```bash
 export REPOSTORE_REPO_DIR=/your/git/directory/
 ```
 
 and
 
-```console
+```bash
 export REPOSTORE_CSV_FILE=/the/save/file.csv
 ```
 
 After setting those variables, you can enter the *repostore* directory, make the scripts executable, and run them:
 
-```console
+```bash
 chmod +x backup.sh
 ./backup.sh
 ```
 
 or
 
-```console
+```bash
 chmod +x restore.sh
 ./restore.sh
 ```
 
 Once you are done, you can unset the variables until you need to run the scripts in the future:
 
-```console
+```bash
 unset REPOSTORE_REPO_DIR
 unset REPOSTORE_CSV_FILE
 ```
