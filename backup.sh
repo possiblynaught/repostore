@@ -31,13 +31,13 @@ fi
 [[ "$SEARCH_DIR" =~ '/'$ ]] || SEARCH_DIR="$SEARCH_DIR/"
 # Check that search directory exists and isn't empty
 [ -d "$SEARCH_DIR" ] || (echo "Error, directory not found: $SEARCH_DIR"; exit 1)
-[ "$(ls -A $SEARCH_DIR)" ] || (echo "Error, directory is empty: $SEARCH_DIR"; exit 1)
+[ "$(ls -A ${SEARCH_DIR})" ] || (echo "Error, directory is empty: $SEARCH_DIR"; exit 1)
 # Check for git repos and backup the dirs
 for DIR in "$SEARCH_DIR"*; do
   if [ -d "$DIR/.git/" ]; then
     cd "$DIR" || exit 1
     LINK=$(git config --get remote.origin.url || true)
-    NAME="$(basename $DIR)"
+    NAME="$(basename ${DIR})"
     if [ -n "$LINK" ] && [ -n "$NAME" ]; then
       echo "$NAME,$LINK" >> "$OUTPUT_FILE"
     else
@@ -52,5 +52,6 @@ TEMP_FILE=$(mktemp /tmp/repostore.XXXXXX || exit 1)
 sort "$OUTPUT_FILE" | uniq > "$TEMP_FILE"
 mv "$TEMP_FILE" "$OUTPUT_FILE"
 # Notify user of completion and save location
-echo "--------------------------------------------------------------------------------
-Searched $SEARCH_DIR for new repos, $(wc -l < $OUTPUT_FILE) repos are now saved in: $OUTPUT_FILE"
+echo "
+Searched $SEARCH_DIR for new repos, $(wc -l < ${OUTPUT_FILE}) repos are now saved in: $OUTPUT_FILE
+"

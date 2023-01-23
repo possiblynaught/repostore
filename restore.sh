@@ -41,10 +41,19 @@ while read -r LINE; do
   REPO="${OUTPUT_DIR}${NAME}"
   LINK=$(echo "$LINE" | cut -d "," -f2)
   if ! [ -d "$REPO" ]; then
-    git clone ${LINK} ${REPO}
+    git clone "$LINK" "$REPO"
     COUNT=$((COUNT+1))
+  elif [ -d "$REPO/.git/" ]; then
+    cd "$REPO" || exit 1
+    TEMP_LINK=$(git config --get remote.origin.url || true)
+    if [ "$TEMP_LINK" != "$LINK" ]; then
+      echo "Warning, git remote url collsion for $NAME, please remove/rename existing repo"
+    fi
+  else
+    echo "Warning, non-git folder collsion for $NAME, please remove existing folder"
   fi
 done < "$INPUT_FILE"
 # Notify user of completion and status
-echo "--------------------------------------------------------------------------------
-Finished, cloned $COUNT new repos from $INPUT_FILE to output directory: $OUTPUT_DIR"
+echo "
+Finished, cloned $COUNT new repos from $INPUT_FILE to output directory: $OUTPUT_DIR
+"
