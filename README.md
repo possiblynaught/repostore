@@ -60,3 +60,5 @@ You can also hard-code the directory/file paths within the scripts themselves, s
 
 - [x] Add example submodule utilization script
 - [ ] Add description of CSV format to README
+- [ ] Add better output formatting/spacing
+- [ ] Check for repo name collisions with different remote urls on restore
