@@ -51,7 +51,7 @@ unset REPOSTORE_REPO_DIR
 unset REPOSTORE_CSV_FILE
 ```
 
-You can also hard-code the directory/file paths within the scripts themselves, see the sections at the top of the scripts containing the text: ***UNCOMMENT TO FORCE/OVERRIDE TRAVERSAL*** to set persistent path variables to override any environmental variables.
+You can also hard-code the directory/file paths within the scripts themselves, see the sections at the top of the scripts containing the text: *### Force override of environmental varables* to set persistent path variables to override any environmental variables.
 
 ## TODO
 

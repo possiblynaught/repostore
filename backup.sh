@@ -4,11 +4,11 @@
 #set -x
 set -Eeo pipefail
 
-### UNCOMMENT TO FORCE/OVERRIDE TRAVERSAL DIR AND SAVE FILE ###
+### Force override of environmental variables
 #SEARCH_DIR="$HOME/Documents" # Directory to be searched for repos
 #OUTPUT_FILE="/tmp/saved_repos.csv" # Output csv file
 
-# Check if environmetal variables or overrides have been set, warn if missing
+# Check if environmetal variable override has been set, also warn if missing var
 if [ -z "$SEARCH_DIR" ]; then
   if [ -z "$REPOSTORE_REPO_DIR" ]; then
     echo "Error, please export the search directory location with: 
