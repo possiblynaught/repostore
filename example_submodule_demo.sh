@@ -28,7 +28,10 @@ REPOSTORE_SUBMODULE="$SCRIPT_DIR/repostore"
 REPOSTORE_BACKUP="$REPOSTORE_SUBMODULE/backup.sh"
 REPOSTORE_RESTORE="$REPOSTORE_SUBMODULE/restore.sh"
 [ -d "$REPOSTORE_SUBMODULE" ] || (echo "Error, repostore submodule not found: $REPOSTORE_SUBMODULE"; exit 1)
-[ -f "$REPOSTORE_BACKUP" ] && [ -f "$REPOSTORE_RESTORE" ] || (echo "Error, repostore script(s) not found in: $REPOSTORE_SUBMODULE"; exit 1)
+if [ ! -f "$REPOSTORE_BACKUP" ] || [ ! -f "$REPOSTORE_RESTORE" ]; then
+  echo "Error, repostore script(s) not found in: $REPOSTORE_SUBMODULE"
+  exit 1
+fi
 
 # Export submodule variables
 export REPOSTORE_CSV_FILE="$CSV_FILE"
