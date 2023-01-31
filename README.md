@@ -59,3 +59,4 @@ You can also hard-code the directory/file paths within the scripts themselves, s
 - [x] Add better output formatting/spacing
 - [x] Check for repo name collisions with different remote urls on restore
 - [ ] Add description of CSV format to README
+- [ ] Make restore clone multiple repos at once/parallel downloads
