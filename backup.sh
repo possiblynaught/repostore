@@ -115,7 +115,7 @@ main () {
     while read -r line; do
       temp_num="$(echo "$line" | cut -d " " -f1)"
       temp_link="$(echo "$line" | cut -d " " -f2)"
-      echo "Found $temp_num duplicate repos with the same remote link:"
+      echo "Found $temp_num repos with the same remote link:"
       echo "  Repos: $(grep -iF "$temp_link" < "$CSV_FILE" | cut -d "," -f1 | tr '\n' ' ')"
       echo "  Link: $temp_link"
       echo "$temp_num,$temp_link,$(grep -iF "$temp_link" < "$CSV_FILE" | cut -d "," -f1 | tr '\n' ' ')" >> "$duplicate_repos"

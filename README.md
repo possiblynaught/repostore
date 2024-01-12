@@ -10,7 +10,7 @@ a_directory_of_many_git_repos/
 │
 └───personal_config_repo/ (git repo you will use to backup/restore all others)
 │   │   a_directory_of_many_git_repos.csv (file to backup/restore repos)
-│   │   a_user_script.sh (your own script to trigger backup/restore subscripts)
+│   │   example_user_script.sh (your own script to trigger backup/restore subscripts)
 │   │   ...
 │   │
 │   └───repostore/ (this repo added as a git submodule)
@@ -51,4 +51,25 @@ git submodule update --init --recursive
 git add . && git commit -m "initial commit with repostore (github.com/possiblynaught/repostore)"
 git remote add origin git@github.com:USERNAME/personal_conf.git
 git push -u origin master
+```
+
+## Example User Script
+
+Example user script to backup all your repos to your personal config repo:
+```bash
+#!/usr/bin/env bash
+SCRIPT_DIR="$(cd -- "$(dirname "$0")" >/dev/null 2>&1; pwd -P)"
+################################################################################
+# Specific file to save/restore repositories to/from:
+CSV_FILE="$SCRIPT_DIR/specific_file.csv"
+################################################################################
+# Restore repos
+run_scr="$SCRIPT_DIR/repostore/backup.sh"
+cd "$SCRIPT_DIR" || exit 1
+if [ ! -x "$run_scr" ]; then
+  git submodule update --init --recursive
+fi
+"$run_scr" "$CSV_FILE"
+git add "$CSV_FILE"
+git commit && git push
 ```
