@@ -28,11 +28,11 @@ MAX_CLONE_CONCURRENT=5 # Number of concurrent git clone operations to perform
 MAX_CLONE_RETRY=3 # Number of times to retry a repo clone if it fails
 MAX_CLONE_TIMEOUT=3600 # Seconds to run before failing on no progress cloning
 fail_time=$(( "$(date +%s)" + MAX_CLONE_TIMEOUT ))
-failed_repos=""
-successful_repos=""
-clone_repos=""
-exist_repos=""
-non_repos=""
+failed_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
+successful_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
+clone_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
+exist_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
+non_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
 
 # Error handler
 err() {
@@ -40,15 +40,17 @@ err() {
   exit 1
 }
 
+# Function to print the number of running background processes for the script
+num_procs() {
+  jobs | grep -cF "Running"
+}
+
 # Function to add a repo to the failed repo file
 # Pass a csv line and (optionally) an retry number
 add_fail() {
   if [ -z "$1" ]; then
     err "Error, no failed csv line (arg 1) passed to: $0"
-  elif [ ! -f "$failed_repos" ]; then
-    failed_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
-  fi
-  if [ -z "$2" ]; then
+  elif [ -z "$2" ]; then
     echo "$1" >> "$failed_repos"
   else
     echo "$1,$2" >> "$failed_repos"
@@ -65,10 +67,7 @@ add_clone() {
   $1"
   elif [ -z "$2" ]; then
     err "Error, no remote repo link (arg 2) passed to: $0"
-  elif [ ! -f "$clone_repos" ]; then
-    clone_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
-  fi
-  if [ -z "$3" ]; then
+  elif [ -z "$3" ]; then
     echo "$1,$2,0" >> "$clone_repos"
   else
     echo "$1,$2,$3" >> "$clone_repos"
@@ -81,7 +80,7 @@ check_collision() {
   if [ -z "$1" ]; then
     err "Error, no repo destination path (arg 1) passed to: $0"
   elif [ ! -d "$1" ]; then
-    err "Error, repo destination passed to $0 isn't empty:
+    err "Error, repo destination passed to $0 is empty:
   $1"
   elif [ -z "$2" ]; then
     err "Error, no remote repo link (arg 2) passed to: $0"
@@ -91,9 +90,6 @@ check_collision() {
   cd "$1" || err "Error, unable to enter directory: $1"
   if [[ "$(git config --get remote.origin.url)" != "$2" ]]; then
     echo "Warning, repo collision detected for: $(basename "$1")"
-    if [ ! -f "$exist_repos" ]; then
-      exist_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
-    fi
     echo "$(basename "$1"),$2" >> "$exist_repos"
   fi
   cd "$temp_dir" || err "Error, unable to enter directory: $temp_dir"
@@ -117,7 +113,6 @@ clone_repo() {
   fi
   if [ -z "$retry" ] || [[ "$retry" -eq 0 ]]; then
     retry=1
-    echo "Cloning into repo: $(basename "$1")"
   elif [[ "$retry" -ge "$MAX_CLONE_RETRY" ]]; then
     echo "Clone has failed $retry times for repo: $(basename "$1")"
     add_fail "$1,$2" "$retry"
@@ -131,6 +126,7 @@ clone_repo() {
     rm -rf "$1"
     add_clone "$1" "$2" "$retry"
   else
+    echo "Successfully cloned repo: $(basename "$1")"
     echo "$1" >> "$successful_repos"
   fi
 }
@@ -187,9 +183,6 @@ main () {
     if [ -f "$dir" ]; then
       echo "Warning, non-directory found: $dir"
     elif [ ! -d "$dir/.git" ]; then
-      if [ ! -f "$non_repos" ]; then
-        non_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
-      fi
       echo "$dir" >> "$non_repos"
     fi
   done
@@ -221,22 +214,37 @@ main () {
 
   # Start cloning new repos in parallel
   if [ -s "$clone_repos" ]; then
-    echo "Cloning $(wc -l < "$clone_repos") new repos to: $REPOS_DIR/"
-    successful_repos="$(mktemp || err "Error, unable to create a tempfile in $0")"
+    echo "Cloning $(wc -l < "$clone_repos") new repo(s) to: $REPOS_DIR/"
     while read -r repo; do
       repo_path="$(echo "$repo" | cut -d "," -f1)"
       repo_link="$(echo "$repo" | cut -d "," -f2)"
       repo_try="$(echo "$repo" | cut -d "," -f3 | tr -dc "[:digit:]")"
-      # Busy wait for parallelization
-      while [[ "$(jobs | wc -l)" -gt "$MAX_CLONE_CONCURRENT" ]]; do
-        sleep 1
-        if [[ "$(date +%s)" -ge "$fail_time" ]]; then
+      # Busy wait for parallelization slots
+      while [[ "$(num_procs)" -ge "$MAX_CLONE_CONCURRENT" ]]; do
+        sleep 1 && time="$(date +%s)"
+        if [[ "$time" -ge "$fail_time" ]]; then
           err "Error, hit MAX_CLONE_TIMEOUT of $MAX_CLONE_TIMEOUT seconds in $0"
+        elif [[ "$(( time % 30 ))" -eq 0 ]]; then
+	  echo "Currently cloning $(num_procs) repo(s)..."
         fi
       done
       fail_time=$(( "$(date +%s)" + MAX_CLONE_TIMEOUT ))
       clone_repo "$repo_path" "$repo_link" "$repo_try" &
+      # Stagger
+      sleep 1
+      # Busy wait for all repos to finish/retry at end of file
+      while [[ "$repo" == "$(tail -n 1 < "$clone_repos")" ]] && \
+        [[ "$(num_procs)" -gt 0 ]]; do
+        sleep 1 && time="$(date +%s)"
+        if [[ "$time" -ge "$fail_time" ]]; then
+          err "Error, hit MAX_CLONE_TIMEOUT of $MAX_CLONE_TIMEOUT seconds in $0"
+        elif [[ "$(( time % 30 ))" -eq 0 ]]; then
+          echo "Wrapping up $(num_procs) clone job(s)..."
+        fi
+      done
     done < "$clone_repos"
+    # Wait for completion and check for accidental overrun
+    wait
   fi
 
   # Warn of repo name collisions with different remote links
@@ -275,7 +283,6 @@ main () {
   # Warn of any failed repos
   if [ -s "$failed_repos" ]; then
     echo -e "\n###############################################################################"
-    cut -d "," -f1 < "$failed_repos"
     while read -r line; do
       temp_num="$(echo "$line" | cut -d "," -f3 | tr -dc "[:digit:]")"
       if [[ "$temp_num" -ge "$MAX_CLONE_RETRY" ]]; then
@@ -287,7 +294,7 @@ main () {
       fi
     done < "$failed_repos"
     echo "-------------------------------------------------------------------------------"
-    echo "Warning: Had $(wc -l < "$failed_repos") failed repo(s) above in: $csv_file"
+    echo "Warning: Had $(wc -l < "$failed_repos") failed repo(s) above from: $csv_file"
     echo -e "  Failed list in CSV format saved to: $failed_repos\n"
   else
     rm -f "$failed_repos"
